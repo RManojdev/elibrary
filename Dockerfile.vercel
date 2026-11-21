@@ -1,0 +1,29 @@
+
+FROM dunglas/frankenphp:1-php8.3-bookworm
+
+WORKDIR /app
+
+# Install the PHP extensions required by the application
+RUN install-php-extensions gd mysqli pdo_mysql
+
+# Enable production PHP settings
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Configure PHP upload and execution settings
+RUN printf '%s\n' \
+    'file_uploads=On' \
+    'upload_max_filesize=512M' \
+    'post_max_size=512M' \
+    'max_execution_time=600' \
+    'max_input_time=600' \
+    > "$PHP_INI_DIR/conf.d/uploads.ini"
+
+# Copy the application
+COPY . /app
+
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Start FrankenPHP
+ENV PORT=80
+
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
